@@ -2,7 +2,7 @@ require('dotenv').config();
 const { ethers } =  require('ethers');
 const axios = require('axios');
 const { AlphaRouter, SwapType } = require('@uniswap/smart-order-router');
-const { Token, CurrencyAmount, TradeType } = require('@uniswap/sdk-core');
+const { Token, CurrencyAmount, TradeType, Percent } = require('@uniswap/sdk-core');
 const { getUniswapTrades, config } = require('./uniswapData');
 const { getSushiswapTrades, config2 } = require('./sushiswapData');
 // console.log(ethers)
@@ -18,11 +18,11 @@ const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 // console.log(wallet)
 const router = new AlphaRouter({ chainId: 11155111, wallet });
 
-async function executeUniswapTrade(tokenAddress, amountIn) {
-  const wethAddress = ethers.constants.AddressZero;
+async function executeUniswapTrade(_wethAddress, tokenAddress, amountIn) {
+  const wethAddress = _wethAddress;
   const token = new Token(1, tokenAddress, 18); // 1 is the chainId for Ethereum mainnet
 
-  const amountInCurrency = CurrencyAmount.fromRawAmount(token, ethers.utils.parseEther(amountIn.toString()).toString());
+  const amountInCurrency = CurrencyAmount.fromRawAmount(token, ethers.parseEther(amountIn.toString()).toString());
   const route = await router.route(
     amountInCurrency,
     token,
@@ -33,7 +33,7 @@ async function executeUniswapTrade(tokenAddress, amountIn) {
       deadline: Math.floor(Date.now() / 1000) + 60 * 20
     },
     {
-      value: ethers.utils.parseEther(amountIn.toString())
+      value: ethers.parseEther(amountIn.toString())
     }
   );
 
@@ -57,17 +57,25 @@ async function executeSushiswapTrade(tokenAddress, amountIn) {
 }
 
 async function checkArbitrageOpportunity() {
-  const trades = await getUniswapTrades(config);
+  const uniswapTrades = await getUniswapTrades(config);
+  // console.log(uniswapTrades[0].Trade)
+  const sushiswapTrades = await getSushiswapTrades(config2);
 
-  for (let trade of trades) {
-    let amount = parseFloat(trade.tradeAmount);
+  for (let index in sushiswapTrades) {
+    // console.log(trade.Trade.Buy.PriceInUSD)
+    let priceOnUniswap = uniswapTrades[index].Trade.Buy.PriceInUSD;
+    let priceOnSushiswap = sushiswapTrades[index].Trade.Buy.PriceInUSD;
 
-    if (amount >= 1000) { // Arbitrage condition, can be adjusted
-      const tokenAddress = '0x...'; // Replace with the actual token address
+    // console.log(uniswapTrades[index].Trade.Buy.Currency)
+
+    if (priceOnUniswap != priceOnSushiswap) { // Arbitrage condition, can be adjusted
+      // console.log(priceOnSushiswap, priceOnUniswap)
+      const token0Address = uniswapTrades[index].Trade.Buy.Currency.SmartContract;
+      const token1Address = uniswapTrades[index].Trade.Sell.Currency.SmartContract;
       const amountIn = 1; // Amount in ETH, can be adjusted
 
       // Execute trade on Uniswap
-      await executeUniswapTrade(tokenAddress, amountIn);
+      await executeUniswapTrade(token0Address, token1Address, amountIn);
 
       // Check balance of the token after Uniswap trade
       const tokenContract = new ethers.Contract(tokenAddress, ['function balanceOf(address owner) view returns (uint256)'], provider);
@@ -82,4 +90,4 @@ async function checkArbitrageOpportunity() {
 }
 
 // Run the bot
-setInterval(checkArbitrageOpportunity, 5000) // Check every 5 seconds
+checkArbitrageOpportunity() // Check every 5 seconds
