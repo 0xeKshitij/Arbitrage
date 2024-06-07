@@ -1,18 +1,22 @@
 require('dotenv').config();
-const { ethers } = require('ethers');
+const { ethers } =  require('ethers');
 const axios = require('axios');
 const { AlphaRouter, SwapType } = require('@uniswap/smart-order-router');
 const { Token, CurrencyAmount, TradeType } = require('@uniswap/sdk-core');
-const { getMempoolData } = require('./mempoolQuery');
+const { getUniswapTrades, config } = require('./uniswapData');
+const { getSushiswapTrades, config2 } = require('./sushiswapData');
+// console.log(ethers)
 
-const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
+const RPC_ENDPOINT = process.env.RPC_ENDPOINT;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const UNISWAP_ROUTER_ADDRESS = process.env.UNISWAP_ROUTER_ADDRESS;
 const SUSHISWAP_ROUTER_ADDRESS = process.env.SUSHISWAP_ROUTER_ADDRESS;
 
-const provider = new ethers.providers.InfuraProvider('mainnet', INFURA_PROJECT_ID);
+const provider = new ethers.getDefaultProvider(RPC_ENDPOINT);
+// console.log(provider)
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-const router = new AlphaRouter({ chainId: 1, provider });
+// console.log(wallet)
+const router = new AlphaRouter({ chainId: 11155111, wallet });
 
 async function executeUniswapTrade(tokenAddress, amountIn) {
   const wethAddress = ethers.constants.AddressZero;
@@ -49,29 +53,11 @@ async function executeUniswapTrade(tokenAddress, amountIn) {
 }
 
 async function executeSushiswapTrade(tokenAddress, amountIn) {
-  const sushiswapRouter = new ethers.Contract(
-    SUSHISWAP_ROUTER_ADDRESS,
-    ['function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)'],
-    wallet
-  );
-
-  const tx = await sushiswapRouter.swapExactETHForTokens(
-    1, // Placeholder for minimum amount out, adjust as necessary
-    [ethers.constants.AddressZero, tokenAddress],
-    wallet.address,
-    Math.floor(Date.now() / 1000) + 60 * 20,
-    {
-      value: ethers.utils.parseEther(amountIn.toString()),
-      gasLimit: ethers.utils.hexlify(1000000)
-    }
-  );
-
-  await tx.wait();
-  console.log('Sushiswap trade executed:', tx.hash);
+  console.log('Sushiswap trade executed');
 }
 
 async function checkArbitrageOpportunity() {
-  const trades = await getMempoolData();
+  const trades = await getUniswapTrades(config);
 
   for (let trade of trades) {
     let amount = parseFloat(trade.tradeAmount);
@@ -96,4 +82,4 @@ async function checkArbitrageOpportunity() {
 }
 
 // Run the bot
-setInterval(checkArbitrageOpportunity, 5000); // Check every 5 seconds
+setInterval(checkArbitrageOpportunity, 5000) // Check every 5 seconds
