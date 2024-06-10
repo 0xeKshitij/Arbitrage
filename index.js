@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { ethers } =  require('ethers');
+const { ethers } = require('ethers');
 const axios = require('axios');
 const { AlphaRouter, SwapType } = require('@uniswap/smart-order-router');
 const { Token, CurrencyAmount, TradeType, Percent } = require('@uniswap/sdk-core');
@@ -7,7 +7,7 @@ const { getUniswapTrades, config } = require('./uniswapData');
 const { getSushiswapTrades, config2 } = require('./sushiswapData');
 
 const RPC_ENDPOINT = "https://eth-sepolia.g.alchemy.com/v2/qsmBqL-17wbolk3wYM-Lw4QkMhZzinqb";
-const PRIVATE_KEY = "..";
+const PRIVATE_KEY = "...";
 const UNISWAP_ROUTER_ADDRESS = "0xC532a74256D3Db42D0Bf7a0400fEFDbad7694008";
 const SUSHISWAP_ROUTER_ADDRESS = "0xeaBcE3E74EF41FB40024a21Cc2ee2F5dDc615791";
 
@@ -92,7 +92,7 @@ async function checkArbitrageOpportunity() {
 
         console.log(`Arbitrage detected. Executing trades for Token0: ${token0Address}, Token1: ${token1Address}, Amount: ${amountIn}`);
 
-        // await executeUniswapTrade(token0Address, token1Address, amountIn);
+        await executeUniswapTrade(token0Address, token1Address, amountIn);
 
         // // Check balance of the token after Uniswap trade
         // const tokenContract = new ethers.Contract(token1Address, ['function balanceOf(address owner) view returns (uint256)'], provider);
@@ -110,5 +110,5 @@ async function checkArbitrageOpportunity() {
   }
 }
 
-// Run the bot every 5 seconds
-setInterval(checkArbitrageOpportunity, 5000);
+// Run the bot once
+checkArbitrageOpportunity();
