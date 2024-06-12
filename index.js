@@ -6,14 +6,14 @@ const { Token, CurrencyAmount, TradeType, Percent } = require('@uniswap/sdk-core
 const { getUniswapTrades, config } = require('./uniswapData');
 const { getSushiswapTrades, config2 } = require('./sushiswapData');
 
-const RPC_ENDPOINT = "https://eth-sepolia.g.alchemy.com/v2/qsmBqL-17wbolk3wYM-Lw4QkMhZzinqb";
-const PRIVATE_KEY = "...";
-const UNISWAP_ROUTER_ADDRESS = "0xC532a74256D3Db42D0Bf7a0400fEFDbad7694008";
+const RPC_ENDPOINT = "https://eth-mainnet.g.alchemy.com/v2/ImUek2nGF5p6l0s1RZIkTauq5oVu5GkW";
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const UNISWAP_ROUTER_ADDRESS = "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD";
 const SUSHISWAP_ROUTER_ADDRESS = "0xeaBcE3E74EF41FB40024a21Cc2ee2F5dDc615791";
 
-const provider = new ethers.getDefaultProvider(RPC_ENDPOINT);
+const provider = new ethers.providers.JsonRpcProvider(RPC_ENDPOINT)
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-const router = new AlphaRouter({ chainId: 11155111, wallet });
+const router = new AlphaRouter({ chainId: 11155111, provider });
 
 async function executeUniswapTrade(_wethAddress, tokenAddress, amountIn) {
   try {
@@ -22,7 +22,7 @@ async function executeUniswapTrade(_wethAddress, tokenAddress, amountIn) {
     const wethAddress = _wethAddress;
     const token = new Token(1, tokenAddress, 18); // 1 is the chainId for Ethereum mainnet
 
-    const amountInCurrency = CurrencyAmount.fromRawAmount(token, ethers.parseEther(amountIn.toString()).toString());
+    const amountInCurrency = CurrencyAmount.fromRawAmount(token, ethers.utils.parseEther(amountIn.toString()).toString());
     console.log('Amount in currency:', amountInCurrency.toExact());
 
     const route = await router.route(
@@ -35,7 +35,7 @@ async function executeUniswapTrade(_wethAddress, tokenAddress, amountIn) {
         deadline: Math.floor(Date.now() / 1000) + 60 * 20
       },
       {
-        value: ethers.parseEther(amountIn.toString())
+        value: ethers.utils.parseEther(amountIn.toString())
       }
     );
     console.log('Route:', route);
@@ -88,7 +88,7 @@ async function checkArbitrageOpportunity() {
       if (priceOnUniswap != priceOnSushiswap) { // Arbitrage condition, can be adjusted
         const token0Address = uniswapTrades[index].Trade.Buy.Currency.SmartContract;
         const token1Address = uniswapTrades[index].Trade.Sell.Currency.SmartContract;
-        const amountIn = 1; // Amount in ETH, can be adjusted
+        const amountIn = 1/1000000; // Amount in ETH, can be adjusted
 
         console.log(`Arbitrage detected. Executing trades for Token0: ${token0Address}, Token1: ${token1Address}, Amount: ${amountIn}`);
 
