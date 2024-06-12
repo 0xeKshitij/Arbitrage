@@ -6,10 +6,10 @@ const { Token, CurrencyAmount, TradeType, Percent } = require('@uniswap/sdk-core
 const { getUniswapTrades, config } = require('./uniswapData');
 const { getSushiswapTrades, config2 } = require('./sushiswapData');
 
-const RPC_ENDPOINT = "https://eth-mainnet.g.alchemy.com/v2/ImUek2nGF5p6l0s1RZIkTauq5oVu5GkW";
+const RPC_ENDPOINT = process.env.RPC_ENDPOINT;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
-const UNISWAP_ROUTER_ADDRESS = "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD";
-const SUSHISWAP_ROUTER_ADDRESS = "0xeaBcE3E74EF41FB40024a21Cc2ee2F5dDc615791";
+const UNISWAP_ROUTER_ADDRESS = process.env.UNISWAP_ROUTER_ADDRESS;
+const SUSHISWAP_ROUTER_ADDRESS = process.env.SUSHISWAP_ROUTER_ADDRESS;
 
 const provider = new ethers.providers.JsonRpcProvider(RPC_ENDPOINT)
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
